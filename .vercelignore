@@ -1,0 +1,20 @@
+# Exclude large video files
+*.mkv
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.m4v
+*.ts
+
+# Exclude python cache and environment
+__pycache__/
+*.pyc
+.cache_posters/
+.git
+.DS_Store
+
+# Exclude launcher scripts from upload
+start_player.sh
+*.command
