@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CinePlay - Cinema Player</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="cinema-body">
+
+  <div class="player-container" id="playerContainer">
+    <!-- Ambient glow behind video for immersion -->
+    <div class="ambient-glow" id="ambientGlow"></div>
+
+    <!-- Video Element -->
+    <video id="videoElement" playsinline preload="auto"></video>
+
+    <!-- Subtitle Overlay Layer -->
+    <div class="subtitle-layer" id="subtitleLayer">
+      <div class="subtitle-text" id="subtitleText"></div>
+    </div>
+
+    <!-- Center Play/Pause Ripple Indicator -->
+    <div class="center-feedback" id="centerFeedback">
+      <div class="feedback-icon" id="feedbackIcon"></div>
+    </div>
+
+    <!-- Buffering Spinner -->
+    <div class="buffering-spinner" id="bufferingSpinner">
+      <div class="spinner-ring"></div>
+      <span class="spinner-text">Buffering...</span>
+    </div>
+
+    <!-- Initial Poster Overlay -->
+    <div class="initial-poster-overlay" id="initialPosterOverlay">
+      <div class="poster-backdrop"></div>
+      <div class="poster-content">
+        <div class="movie-badge" id="posterBadge">1080p FULL HD • MULTI-AUDIO</div>
+        <h1 class="poster-title" id="posterTitle">Ramayana (2026)</h1>
+        <p class="poster-meta" id="posterMeta">Loading details...</p>
+        <div class="poster-actions" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <button class="big-play-btn" id="bigPlayBtn" title="Play Movie">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <span>Watch Movie</span>
+          </button>
+          <button class="big-play-btn secondary" id="chooseFileBtn" title="Select Any Video from Device" style="background: rgba(255,255,255,0.12); box-shadow: none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span>Open Video</span>
+          </button>
+        </div>
+        <input type="file" id="videoFileInput" accept="video/*,.mkv,.mp4,.webm" style="display: none;">
+      </div>
+    </div>
+
+    <!-- Top Navigation Header Overlay -->
+    <div class="player-header" id="playerHeader">
+      <div class="header-left">
+        <div class="app-logo">
+          <span class="logo-icon">🎬</span>
+          <span class="logo-text">CINEPLAY</span>
+        </div>
+        <div class="header-divider"></div>
+        <div class="header-movie-info">
+          <span class="movie-title" id="headerMovieTitle">Loading...</span>
+          <span class="movie-tags" id="headerMovieTags">1080p • Multi-Audio</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <!-- Notification Toast -->
+        <div class="toast-notification" id="toastNotification"></div>
+        <!-- Shortcuts Help Button -->
+        <button class="icon-btn" id="shortcutsBtn" title="Keyboard Shortcuts (?)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Resume Prompt Banner -->
+    <div class="resume-banner" id="resumeBanner" style="display: none;">
+      <div class="resume-content">
+        <span>Resume from <strong id="resumeTimeStr">00:00:00</strong>?</span>
+        <div class="resume-actions">
+          <button class="btn btn-primary" id="btnResumeYes">Resume</button>
+          <button class="btn btn-secondary" id="btnResumeNo">Start Over</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Controls Overlay -->
+    <div class="controls-overlay" id="controlsOverlay">
+      <!-- Scrubbing Timeline -->
+      <div class="timeline-container" id="timelineContainer">
+        <div class="timeline-hover-time" id="timelineHoverTime">00:00:00</div>
+        <div class="timeline-track" id="timelineTrack">
+          <div class="timeline-buffer" id="timelineBuffer"></div>
+          <div class="timeline-progress" id="timelineProgress"></div>
+          <div class="timeline-handle" id="timelineHandle"></div>
+        </div>
+      </div>
+
+      <!-- Control Buttons Bar -->
+      <div class="controls-bar">
+        <!-- Left Group -->
+        <div class="ctrl-group left-group">
+          <!-- Play / Pause -->
+          <button class="ctrl-btn" id="playPauseBtn" title="Play / Pause (Space)">
+            <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+            <svg id="pauseIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          </button>
+
+          <!-- Rewind 10s -->
+          <button class="ctrl-btn" id="rewindBtn" title="Rewind 10s (Left Arrow)">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/>
+            </svg>
+            <span class="btn-subtext">10</span>
+          </button>
+
+          <!-- Forward 10s -->
+          <button class="ctrl-btn" id="forwardBtn" title="Forward 10s (Right Arrow)">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M18.4 10.6C16.55 8.99 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/>
+            </svg>
+            <span class="btn-subtext">10</span>
+          </button>
+
+          <!-- Volume Controls -->
+          <div class="volume-container">
+            <button class="ctrl-btn" id="volumeBtn" title="Mute / Unmute (M)">
+              <svg id="volHighIcon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+              </svg>
+              <svg id="volMuteIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+                <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+              </svg>
+            </button>
+            <div class="volume-slider-box">
+              <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.05" value="1">
+            </div>
+          </div>
+
+          <!-- Time Display -->
+          <div class="time-display">
+            <span id="currentTimeDisplay">00:00:00</span>
+            <span class="time-separator">/</span>
+            <span id="totalDurationDisplay">00:00:00</span>
+          </div>
+        </div>
+
+        <!-- Right Group -->
+        <div class="ctrl-group right-group">
+          <!-- Audio Language Button -->
+          <div class="popover-wrapper">
+            <button class="ctrl-btn with-label" id="audioMenuBtn" title="Change Audio Language (A)">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3v9.28a4.39 4.39 0 0 0-1.5-.28C8.01 12 6 14.01 6 16.5S8.01 21 10.5 21c2.31 0 4.2-1.75 4.45-4H15V6h4V3h-7z"/>
+              </svg>
+              <span class="label-text" id="activeAudioLabel">Audio</span>
+            </button>
+            <!-- Audio Selection Popover -->
+            <div class="menu-popover" id="audioPopover">
+              <div class="popover-header">
+                <span>Select Audio Track</span>
+                <span class="badge" id="audioCountBadge">5 Tracks</span>
+              </div>
+              <div class="menu-list" id="audioTracksList">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Subtitles Button -->
+          <div class="popover-wrapper">
+            <button class="ctrl-btn with-label" id="subtitlesMenuBtn" title="Subtitles (C)">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-9 7H9.5v-.5h-2v3h2v-.5H11v1c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1zm7 0h-1.5v-.5h-2v3h2v-.5H18v1c0 .55-.45 1-1 1h-3c-.55 0-1-.45-1-1v-4c0-.55.45-1 1-1h3c.55 0 1 .45 1 1v1z"/>
+              </svg>
+              <span class="label-text" id="activeSubtitleLabel">Subtitles</span>
+              <span class="status-indicator" id="subActiveDot"></span>
+            </button>
+            <!-- Subtitles Popover -->
+            <div class="menu-popover wide" id="subtitlesPopover">
+              <div class="popover-header">
+                <span>Subtitles & Captions</span>
+              </div>
+              <div class="menu-list" id="subtitlesList">
+                <!-- Dynamically populated -->
+              </div>
+              
+              <!-- Subtitle Tools -->
+              <div class="sub-tools">
+                <!-- Add Subtitle File Button -->
+                <button class="tool-btn" id="uploadSubBtn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span>Upload / Load .SRT or .VTT</span>
+                </button>
+                <input type="file" id="subFileInput" accept=".srt,.vtt" style="display: none;">
+
+                <!-- Sync Offset Controls -->
+                <div class="sub-sync-row">
+                  <span class="sub-tool-label">Sync Delay:</span>
+                  <div class="sync-controls">
+                    <button class="sync-btn" id="syncMinusBtn">-0.5s</button>
+                    <span class="sync-val" id="syncValDisplay">0.0s</span>
+                    <button class="sync-btn" id="syncPlusBtn">+0.5s</button>
+                  </div>
+                </div>
+
+                <!-- Font Size Controls -->
+                <div class="sub-size-row">
+                  <span class="sub-tool-label">Size:</span>
+                  <div class="size-options">
+                    <button class="size-chip" data-size="small">S</button>
+                    <button class="size-chip active" data-size="medium">M</button>
+                    <button class="size-chip" data-size="large">L</button>
+                    <button class="size-chip" data-size="xl">XL</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Playback Speed Button -->
+          <div class="popover-wrapper">
+            <button class="ctrl-btn with-label" id="speedMenuBtn" title="Playback Speed">
+              <span class="label-text" id="speedLabel">1x</span>
+            </button>
+            <div class="menu-popover compact" id="speedPopover">
+              <div class="popover-header">Speed</div>
+              <div class="menu-list">
+                <div class="menu-item speed-opt" data-speed="0.5">0.5x</div>
+                <div class="menu-item speed-opt" data-speed="0.75">0.75x</div>
+                <div class="menu-item speed-opt active" data-speed="1.0">1.0x (Normal)</div>
+                <div class="menu-item speed-opt" data-speed="1.25">1.25x</div>
+                <div class="menu-item speed-opt" data-speed="1.5">1.5x</div>
+                <div class="menu-item speed-opt" data-speed="2.0">2.0x</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Picture in Picture -->
+          <button class="ctrl-btn" id="pipBtn" title="Picture in Picture">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 7h-8v6h8V7zm2-4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16.01H3V4.99h18v14.02z"/>
+            </svg>
+          </button>
+
+          <!-- Fullscreen -->
+          <button class="ctrl-btn" id="fullscreenBtn" title="Fullscreen (F)">
+            <svg id="fullscreenEnterIcon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+            </svg>
+            <svg id="fullscreenExitIcon" viewBox="0 0 24 24" fill="currentColor" style="display: none;">
+              <path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drag & Drop Subtitle Dropzone Overlay -->
+    <div class="drag-drop-zone" id="dragDropZone">
+      <div class="drag-drop-content">
+        <div class="drag-icon">📄</div>
+        <h3>Drop Subtitle File Here</h3>
+        <p>Supports .srt and .vtt files</p>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div class="shortcuts-modal" id="shortcutsModal" style="display: none;">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Keyboard Shortcuts</h3>
+          <button class="close-btn" id="closeShortcutsBtn">&times;</button>
+        </div>
+        <div class="shortcuts-grid">
+          <div class="sc-row"><kbd>Space</kbd> or <kbd>K</kbd> <span>Play / Pause</span></div>
+          <div class="sc-row"><kbd>←</kbd> / <kbd>→</kbd> <span>Rewind / Forward 10s</span></div>
+          <div class="sc-row"><kbd>↑</kbd> / <kbd>↓</kbd> <span>Volume Up / Down</span></div>
+          <div class="sc-row"><kbd>M</kbd> <span>Mute / Unmute</span></div>
+          <div class="sc-row"><kbd>F</kbd> <span>Toggle Fullscreen</span></div>
+          <div class="sc-row"><kbd>A</kbd> <span>Cycle Audio Language</span></div>
+          <div class="sc-row"><kbd>C</kbd> <span>Toggle Subtitles On/Off</span></div>
+          <div class="sc-row"><kbd>0 - 9</kbd> <span>Jump to 0% - 90%</span></div>
+          <div class="sc-row"><kbd>?</kbd> <span>Show this shortcuts guide</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="/static/js/player.js"></script>
+</body>
+</html>
